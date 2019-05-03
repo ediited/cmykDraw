@@ -1,0 +1,226 @@
+<html>
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.dom.min.js"></script>
+
+    <script src="https://www.auduno.com/clmtrackr/build/clmtrackr.min.js"></script>
+    
+
+    <style>
+        body {
+            background-color: rgb(248, 248, 248);
+        }
+    </style>
+</head>
+
+
+<body>
+    <script>
+
+        var progressBar;
+        var allPoints = [];
+        var allPointsClone = [];
+        var img;
+        var finalDrawOrder = [];
+        var inReach = [];
+        var currentPoint;
+        var speedUp = 1;
+        var rerun = false;
+        var maxReach = 100;
+        finalDrawOrder[0] = currentPoint;
+        var colorCounter = 0;
+
+
+
+        function preload() {
+            //img = loadImage("./base11.png");
+            console.log("loadedImage");
+        }
+
+        var startingLength;
+
+
+        function handleFile(file) {
+            print(file);
+            if (file.type === 'image') {
+               
+               
+                img = loadImage(file.data);
+                image(img, 0, 0);
+                
+                
+               setTimeout(function(){var resFac = 1000 / img.height;
+                resizeCanvas(img.width * resFac, 1000);
+
+                image(img, 0, 0, width + 1, height + 1);
+                filter(POSTERIZE, 8);
+                filter(GRAY);
+                redraw();
+
+                progressBar = createDiv("progressBar");
+                progressBar.class("progressBar");
+
+                generatePoints(10);
+                allPoints = shuffle(allPoints);
+
+                //clear();
+
+                currentPoint = allPoints[0];
+                startingLength = allPoints.length;
+
+
+                noFill();
+                background(240,240,240);
+                strokeWeight(2);
+                stroke(40, 30, 40);
+
+                cloneAllPoints();
+},3000);
+            } else {
+                img = null;
+            }
+        }
+
+        function setup() {
+            input = createFileInput(handleFile);
+            input.position(0, 0);
+
+            createCanvas(1000, 800);
+            /*
+            var resFac = 1000/img.height;
+            createCanvas(img.width*resFac, 1000);
+            
+            image(img, 0, 0,width+1,height+1);
+            filter(POSTERIZE,8);
+            filter(GRAY);
+            redraw();
+
+            generatePoints(6);
+            allPoints = shuffle(allPoints);
+            
+            clear();
+            
+            currentPoint = allPoints[0];
+            startingLength = allPoints.length;
+            
+            
+            noFill();
+            strokeWeight(1);
+            stroke(40,30,40,70);
+
+            cloneAllPoints();
+            */
+        }
+
+        function cloneAllPoints() {
+            for (var i = 0; i < allPoints.length; i++) {
+                allPointsClone[i] = allPoints[i];
+            }
+        }
+
+        function mouseClicked() {
+            console.log(brightness(get(mouseX, mouseY)));
+        }
+
+
+
+        function restartDrawing() {
+            finalDrawOrder = [];
+            allPointsClone = [];
+            cloneAllPoints();
+            currentPoint = allPoints[0];
+            finalDrawOrder[0] = currentPoint;
+
+            switch (colorCounter) {
+                case 0: stroke(150, 10, 10, 80);
+                    break;
+                case 1: stroke(10, 150, 10, 80);
+                    break;
+                case 2: stroke(10, 10, 150, 80);
+                    break;
+                case 3: stroke(40, 40, 40, 70);
+                    break;
+                case 4: stroke(40, 40, 40, 70);
+                    break;
+            }
+            colorCounter++;
+        }
+
+        function draw() {
+
+            if (allPointsClone.length > 5) {
+                console.log(allPointsClone.length / startingLength);
+                for (var repe = 0; repe < speedUp; repe++) {
+                    inReach = [];
+                    for (var i = 0; i < allPointsClone.length; i++) {
+                        if (dist(currentPoint.xpos, currentPoint.ypos, allPointsClone[i].xpos, allPointsClone[i].ypos) < maxReach) {
+                            append(inReach, i);
+                        }
+                    }
+                    if (inReach.length == 0) {
+                        maxReach += 10;
+                    } else {
+                        maxReach = 100;
+
+                        var toMoveIndex = inReach[Math.floor(Math.random() * inReach.length)]
+                        append(finalDrawOrder, allPointsClone[toMoveIndex]);
+                        currentPoint = allPointsClone[toMoveIndex];
+                        allPointsClone.splice(toMoveIndex, 1);
+                        if (finalDrawOrder.length > 5) {
+                            let p1 = { x: finalDrawOrder[finalDrawOrder.length - 1].xpos, y: finalDrawOrder[finalDrawOrder.length - 1].ypos },
+                                p2 = { x: finalDrawOrder[finalDrawOrder.length - 2].xpos, y: finalDrawOrder[finalDrawOrder.length - 2].ypos };
+                            let p3 = { x: finalDrawOrder[finalDrawOrder.length - 3].xpos, y: finalDrawOrder[finalDrawOrder.length - 3].ypos },
+                                p4 = { x: finalDrawOrder[finalDrawOrder.length - 4].xpos, y: finalDrawOrder[finalDrawOrder.length - 4].ypos };
+
+
+                            curve(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+                        }
+
+                    }
+                    // var item = items[Math.floor(Math.random()*items.length)];
+                }
+
+            }
+
+
+
+        }
+
+
+
+
+
+        function shuffle(a) {
+            var j, x, i;
+            for (i = a.length - 1; i > 0; i--) {
+                j = Math.floor(Math.random() * (i + 1));
+                x = a[i];
+                a[i] = a[j];
+                a[j] = x;
+            }
+            return a;
+        }
+
+
+        //too inefficient
+        function generatePoints(skips) {
+            for (var x = 0; x < width; x += skips) {
+                for (var y = 0; y < height; y += skips) {
+                    if (random(0, 90) > brightness(get(x, y))) {
+                        //set(x, y, color(200, 0, 0));
+                        var insertPoint = allPoints.length;
+                        var holder = {};
+                        holder.xpos = x;
+                        holder.ypos = y;
+                        allPoints[insertPoint] = holder;
+                    }
+                }
+
+                console.log("Progess on finding Points: " + x / width);
+            }
+        }
+    </script>
+</body>
+
+</html>

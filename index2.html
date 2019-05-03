@@ -1,0 +1,233 @@
+<html>
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.dom.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.0.min.js"
+        integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg=" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            background-color: rgb(248, 248, 248);
+        }
+
+        .p5Canvas {
+            border-style: solid;
+            border-width: 5px;
+            margin: auto;
+            margin-top: 0;
+            margin-bottom: 0
+        }
+    </style>
+</head>
+
+
+<body>
+    <script>
+        var allPoints = [];
+        var allPointsClone = [];
+        var img;
+        var finalDrawOrder = [];
+        var inReach = [];
+        var currentPoint;
+        var speedUp = 3;
+
+        function preload() {
+            img = loadImage("./base11.png");
+            console.log("loadedImage");
+        }
+
+        var startingLength;
+        var divProgressBar;
+        function setup() {
+
+
+
+            //controlling the variables from here:
+            divProgressBar = createDiv('progressbar').size(100,30);
+            divProgressBar.html('hi');
+            divProgressBar.class("progressBar");
+
+            button = createButton('click me');
+             button.position(19, 19);
+              button.mousePressed(runDrawWrap);
+
+
+            checkbox = createCheckbox('drawing', false);
+            checkbox.changed(myCheckedEvent);
+
+
+
+
+            var sidemult = 800 / img.height;
+            createCanvas(img.width * sidemult, 800);
+
+
+            
+            image(img, 0, 0, width, height);
+            //filter(POSTERIZE,8);
+            //filter(GRAY);
+            redraw();
+            noLoop();
+            //setTimeout(runDraw(4), 10000);
+            //clear();
+            //runDraw(8);
+
+            allPoints = shuffle(allPoints);
+
+
+
+            currentPoint = allPoints[0];
+            startingLength = allPoints.length;
+            noFill();
+            strokeWeight(1);
+            stroke(40, 30, 40, 70);
+
+            cloneAllPoints();
+
+        }
+
+        function runDrawWrap(){
+            runDraw(4);
+        }
+
+        function myCheckedEvent() {
+  if (this.checked()) {
+    //loop();
+    console.log('Checking!');
+  } else {
+    //noloop();
+    console.log('Unchecking!');
+  }
+}
+
+        function cloneAllPoints() {
+            for (var i = 0; i < allPoints.length; i++) {
+                allPointsClone[i] = allPoints[i];
+            }
+        }
+
+        function mouseClicked() {
+            console.log(brightness(get(mouseX, mouseY)));
+            //setTimeout(runDraw(3),5000);
+            /*
+             for (var i = 0; i < allPoints.length; i++) {
+                 fill(0, 0, 255);
+                 ellipse(allPoints[i].xpos, allPoints[i].ypos, 3, 3);
+                         if (dist(mouseX, mouseY, allPoints[i].xpos, allPoints[i].ypos) < 30) {
+                 }
+             }
+             */
+        }
+
+        var rerun = false;
+        var maxReach = 60;
+
+        finalDrawOrder[0] = currentPoint;
+        var colorCounter = 0;
+
+        function restartDrawing() {
+            finalDrawOrder = [];
+            allPointsClone = [];
+            cloneAllPoints();
+            currentPoint = allPoints[0];
+            finalDrawOrder[0] = currentPoint;
+
+            switch (colorCounter) {
+                case 0: stroke(150, 10, 10, 80);
+                    break;
+                case 1: stroke(10, 150, 10, 80);
+                    break;
+                case 2: stroke(10, 10, 150, 80);
+                    break;
+                case 3: stroke(40, 40, 40, 70);
+                    break;
+                case 4: stroke(40, 40, 40, 70);
+                    break;
+            }
+            colorCounter++;
+        }
+
+        function draw() {
+
+            if (allPointsClone.length > 5) {
+                divProgressBar.html(allPointsClone.length / startingLength);
+                for (var repe = 0; repe < speedUp; repe++) {
+                    inReach = [];
+                    for (var i = 0; i < allPointsClone.length; i++) {
+                        if (dist(currentPoint.xpos, currentPoint.ypos, allPointsClone[i].xpos, allPointsClone[i].ypos) < maxReach) {
+                            append(inReach, i);
+                        }
+                    }
+                    if (inReach.length == 0) {
+                        maxReach += 10;
+                    } else {
+                        maxReach = 60;
+
+                        var toMoveIndex = inReach[Math.floor(Math.random() * inReach.length)]
+                        append(finalDrawOrder, allPointsClone[toMoveIndex]);
+                        currentPoint = allPointsClone[toMoveIndex];
+                        allPointsClone.splice(toMoveIndex, 1);
+                        if (finalDrawOrder.length > 5) {
+                            let p1 = { x: finalDrawOrder[finalDrawOrder.length - 1].xpos, y: finalDrawOrder[finalDrawOrder.length - 1].ypos },
+                                p2 = { x: finalDrawOrder[finalDrawOrder.length - 2].xpos, y: finalDrawOrder[finalDrawOrder.length - 2].ypos };
+                            let p3 = { x: finalDrawOrder[finalDrawOrder.length - 3].xpos, y: finalDrawOrder[finalDrawOrder.length - 3].ypos },
+                                p4 = { x: finalDrawOrder[finalDrawOrder.length - 4].xpos, y: finalDrawOrder[finalDrawOrder.length - 4].ypos };
+
+                           // stroke(finalDrawOrder[finalDrawOrder.length - 1].color);
+                            curve(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+                        }
+
+                    }
+                    // var item = items[Math.floor(Math.random()*items.length)];
+                }
+
+            }
+
+
+
+        }
+
+
+
+
+
+        function shuffle(a) {
+            var j, x, i;
+            for (i = a.length - 1; i > 0; i--) {
+                j = Math.floor(Math.random() * (i + 1));
+                x = a[i];
+                a[i] = a[j];
+                a[j] = x;
+            }
+            return a;
+        }
+
+
+        //too inefficient
+        function runDraw(skips) {
+            clear();
+            redraw();
+            for (var x = 0; x < width; x += skips) {
+                for (var y = 0; y < height; y += skips) {
+                    var thisPixelColor = color(get(x, y));
+                    var randZahl = random(30, 90);
+                    if (randZahl > brightness(thisPixelColor) && brightness(thisPixelColor) > random(0, 30)) {
+                        //set(x, y, color(200, 0, 0));
+                        var insertPoint = allPoints.length;
+                        var holder = {};
+                        holder.xpos = x;
+                        holder.ypos = y;
+                        holder.color = thisPixelColor;
+                        allPoints[insertPoint] = holder;
+                    }
+                }
+
+                console.log("Progess on finding Points: " + x / width);
+                divProgressBar.html("Progess on finding Points: " + x / width);
+            }
+        }
+    </script>
+</body>
+
+</html>
